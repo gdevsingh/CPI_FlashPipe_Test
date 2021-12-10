@@ -1,0 +1,42 @@
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+name: UploadDeployIFlow
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: engswee/flashpipe:2.4.3
+    env:
+      HOST_TMN: e1338-tmn.hci.ap1.hana.ondemand.com
+      BASIC_USERID: ${{ secrets.DEV_USER_ID }} # When using Basic authentication
+      BASIC_PASSWORD: ${{ secrets.DEV_PASSWORD }} # When using Basic authentication
+    steps:
+      - uses: actions/checkout@v2
+      # Set environment variables for update_designtime_artifact.sh
+      - run: |
+          echo "GIT_SRC_DIR=$GITHUB_WORKSPACE/<path_to_iflow_dir>" >> $GITHUB_ENV
+          echo "PARAM_FILE=$GITHUB_WORKSPACE/<path_to_param_file>" >> $GITHUB_ENV # Optional
+          echo "MANIFEST_FILE=$GITHUB_WORKSPACE/<path_to_manifest_file>" >> $GITHUB_ENV # Optional
+      # Upload/Update design time
+      - name: 'Update/Upload Groovy XML Transformation to design time'
+        run: /usr/bin/update_designtime_artifact.sh
+        shell: bash
+        env:
+          IFLOW_ID: <iflow_id>
+          IFLOW_NAME: <iflow_name>
+          PACKAGE_ID: <package_id>
+          PACKAGE_NAME: <package_name>
+          WORK_DIR: <working_directory> # Optional
+          VERSION_HANDLING: <version_no_handling_during_update> # Optional
+      # Deploy runtime
+      - name: 'Deploy test iflow to runtime'
+        run: /usr/bin/deploy_runtime_artifact.sh
+        shell: bash
+        env:
+          IFLOW_ID: <iflow_id>
+          DELAY_LENGTH: <delay_in_seconds> # Optional
+          MAX_CHECK_LIMIT: <max_check_limit> # Optional
